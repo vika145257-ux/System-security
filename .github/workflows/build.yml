@@ -11,17 +11,24 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Unzip project
+      - name: Find and unzip project
         run: |
+          echo "Files in repo:"
+          ls -la
+          ZIP=$(find . -maxdepth 2 -iname "*.zip" | head -1)
+          echo "Using zip: $ZIP"
           mkdir proj
-          unzip -q sambhal-project.zip -d proj
+          unzip -q "$ZIP" -d proj
+          DIR=$(dirname "$(find proj -name settings.gradle | head -1)")
+          echo "Project dir: $DIR"
+          echo "PROJ_DIR=$DIR" >> "$GITHUB_ENV"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
       - name: Build debug APK
-        working-directory: proj
+        working-directory: ${{ env.PROJ_DIR }}
         run: gradle assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: sambhal-apk
-          path: proj/app/build/outputs/apk/debug/*.apk
+          path: ${{ env.PROJ_DIR }}/app/build/outputs/apk/debug/*.apk
